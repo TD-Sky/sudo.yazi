@@ -10,8 +10,8 @@ Call `sudo` in yazi.
 - [ ] remove files
 - [x] create absolute-path symbolic links
 - [ ] create relative-path symbolic links
-- [ ] touch new file
-- [ ] make new directory
+- [x] touch new file
+- [x] make new directory
 
 ## Usage
 
@@ -20,13 +20,19 @@ Here are my own keymap for reference only:
 ```toml
 # sudo cp/mv
 [[manager.keymap]]
-on = ["<C-p>"]
+on = ["R", "p"]
 exec = "plugin sudo --args='paste'"
 desc = "sudo paste"
 
 # sudo ln -s (absolute-path)
 [[manager.keymap]]
-on = ["<C-l>"]
+on = ["R", "l"]
 exec = "plugin sudo --args='link'"
 desc = "sudo link"
+
+# sudo touch/mkdir
+[[manager.keymap]]
+on = ["R", "a"]
+exec = "plugin sudo --args='create'"
+desc = "sudo create"
 ```

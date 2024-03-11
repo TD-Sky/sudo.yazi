@@ -18,6 +18,23 @@ local get_state = ya.sync(function(_, cmd)
         }
     elseif cmd == "create" then
         return { kind = cmd }
+    elseif cmd == "remove" then
+        local selected = {}
+
+        if #cx.active.selected ~= 0 then
+            for _, url in pairs(cx.active.selected) do
+                table.insert(selected, tostring(url))
+            end
+        else
+            table.insert(selected, tostring(cx.active.current.hovered.url))
+        end
+
+        return {
+            kind = cmd,
+            value = {
+                selected = selected,
+            },
+        }
     else
         return {}
     end
@@ -83,6 +100,18 @@ local function sudo_create()
     end
 end
 
+local function sudo_remove(state)
+    local args = { "sudo", "-k", "--" }
+    if state.is_permanent then
+        list_extend(args, { "rm", "-rf" })
+    else
+        table.insert(args, "cnc")
+    end
+    list_extend(args, state.selected)
+
+    sudo_execute(args)
+end
+
 return {
     entry = function(_, args)
         local state = get_state(args[1])
@@ -93,6 +122,9 @@ return {
             sudo_link(state.value)
         elseif state.kind == "create" then
             sudo_create()
+        elseif state.kind == "remove" then
+            state.value.is_permanent = args[2] == "-P"
+            sudo_remove(state.value)
         end
     end,
 }

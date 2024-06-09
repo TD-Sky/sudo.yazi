@@ -35,6 +35,13 @@ local get_state = ya.sync(function(_, cmd)
                 selected = selected,
             },
         }
+    elseif cmd == "rename" and #cx.active.selected == 0 then
+        return {
+            kind = cmd,
+            value = {
+                hovered = tostring(cx.active.current.hovered.url),
+            },
+        }
     else
         return {}
     end
@@ -50,6 +57,10 @@ function string:ends_with_char(suffix)
     return self:sub(-#suffix) == suffix
 end
 
+function string:is_path()
+    return self == "." or self == ".." or self:find("/") ~= #self
+end
+
 local function sudo_execute(command)
     ya.manager_emit("shell", {
         table.concat(command, " "),
@@ -58,56 +69,69 @@ local function sudo_execute(command)
     })
 end
 
-local function sudo_paste(state)
+local function sudo_paste(value)
     local args = { "sudo", "-k", "--" }
-    if state.is_cut then
+    if value.is_cut then
         list_extend(args, { "mv", "-f" })
     else
         list_extend(args, { "cp", "-rf" })
     end
-    list_extend(args, state.yanked)
+    list_extend(args, value.yanked)
     list_extend(args, { "-t", "./" })
 
     sudo_execute(args)
 end
 
-local function sudo_link(state)
+local function sudo_link(value)
     local args = { "sudo", "-k", "--" }
     list_extend(args, { "ln", "-s" })
-    list_extend(args, state.yanked)
+    list_extend(args, value.yanked)
     list_extend(args, { "-t", "./" })
-
     sudo_execute(args)
 end
 
 local function sudo_create()
-    local path, event = ya.input({
+    local name, event = ya.input({
         title = "sudo create:",
         position = { "top-center", y = 2, w = 40 },
     })
 
     -- Input and confirm
-    if event == 1 then
+    if event == 1 and not name:is_path() then
         local args = { "sudo", "-k", "--" }
-        if path:ends_with_char("/") then
+        if name:ends_with_char("/") then
             list_extend(args, { "mkdir", "-p" })
         else
             table.insert(args, "touch")
         end
-        table.insert(args, ya.quote(path))
+        table.insert(args, ya.quote(name))
 
         sudo_execute(args)
     end
 end
 
-local function sudo_remove(state)
+local function sudo_rename(value)
+    local new_name, event = ya.input({
+        title = "sudo rename:",
+        position = { "top-center", y = 2, w = 40 },
+    })
+
+    -- Input and confirm
+    if event == 1 and not new_name:is_path() then
+        local args = { "sudo", "-k", "--" }
+        list_extend(args, { "mv", value.hovered, new_name })
+        sudo_execute(args)
+    end
+end
+
+local function sudo_remove(value)
     local args = { "sudo", "-k", "--" }
-    if state.is_permanent then
+    if value.is_permanent then
         list_extend(args, { "rm", "-rf" })
     else
         table.insert(args, "cnc")
     end
-    list_extend(args, state.selected)
+    list_extend(args, value.selected)
 
     sudo_execute(args)
 end
@@ -125,6 +149,8 @@ return {
         elseif state.kind == "remove" then
             state.value.is_permanent = args[2] == "-P"
             sudo_remove(state.value)
+        elseif state.kind == "rename" then
+            sudo_rename(state.value)
         end
     end,
 }

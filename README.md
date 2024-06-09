@@ -6,6 +6,7 @@ Call `sudo` in yazi.
 
 - [x] copy files
 - [x] move files
+- [x] rename file
 - [x] trash files (using [conceal](https://github.com/TD-Sky/conceal))
 - [x] remove files
 - [x] create absolute-path symbolic links
@@ -23,6 +24,12 @@ Here are my own keymap for reference only:
 on = ["R", "p"]
 run = "plugin sudo --args='paste'"
 desc = "sudo paste"
+
+# sudo mv
+[[manager.keymap]]
+on = ["R", "r"]
+run = "plugin sudo --args='rename'"
+desc = "sudo rename"
 
 # sudo ln -s (absolute-path)
 [[manager.keymap]]

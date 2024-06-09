@@ -1,3 +1,12 @@
+function string:ends_with_char(suffix)
+    return self:sub(-#suffix) == suffix
+end
+
+function string:is_path()
+    local i = self:find("/")
+    return self == "." or self == ".." or i and i ~= #self
+end
+
 local get_state = ya.sync(function(_, cmd)
     if cmd == "paste" or cmd == "link" then
         local yanked = {}
@@ -47,21 +56,17 @@ local get_state = ya.sync(function(_, cmd)
     end
 end)
 
+local function sudo_cmd()
+    return { "sudo", "-k", "--" }
+end
+
 local function list_extend(self, iter)
     for _, value in ipairs(iter) do
         table.insert(self, value)
     end
 end
 
-function string:ends_with_char(suffix)
-    return self:sub(-#suffix) == suffix
-end
-
-function string:is_path()
-    return self == "." or self == ".." or self:find("/") ~= #self
-end
-
-local function sudo_execute(command)
+local function execute(command)
     ya.manager_emit("shell", {
         table.concat(command, " "),
         block = true,
@@ -70,7 +75,7 @@ local function sudo_execute(command)
 end
 
 local function sudo_paste(value)
-    local args = { "sudo", "-k", "--" }
+    local args = sudo_cmd()
     if value.is_cut then
         list_extend(args, { "mv", "-f" })
     else
@@ -79,15 +84,15 @@ local function sudo_paste(value)
     list_extend(args, value.yanked)
     list_extend(args, { "-t", "./" })
 
-    sudo_execute(args)
+    execute(args)
 end
 
 local function sudo_link(value)
-    local args = { "sudo", "-k", "--" }
+    local args = sudo_cmd()
     list_extend(args, { "ln", "-s" })
     list_extend(args, value.yanked)
     list_extend(args, { "-t", "./" })
-    sudo_execute(args)
+    execute(args)
 end
 
 local function sudo_create()
@@ -98,7 +103,7 @@ local function sudo_create()
 
     -- Input and confirm
     if event == 1 and not name:is_path() then
-        local args = { "sudo", "-k", "--" }
+        local args = sudo_cmd()
         if name:ends_with_char("/") then
             list_extend(args, { "mkdir", "-p" })
         else
@@ -106,7 +111,7 @@ local function sudo_create()
         end
         table.insert(args, ya.quote(name))
 
-        sudo_execute(args)
+        execute(args)
     end
 end
 
@@ -118,14 +123,14 @@ local function sudo_rename(value)
 
     -- Input and confirm
     if event == 1 and not new_name:is_path() then
-        local args = { "sudo", "-k", "--" }
-        list_extend(args, { "mv", value.hovered, new_name })
-        sudo_execute(args)
+        local args = sudo_cmd()
+        list_extend(args, { "mv", value.hovered, ya.quote(new_name) })
+        execute(args)
     end
 end
 
 local function sudo_remove(value)
-    local args = { "sudo", "-k", "--" }
+    local args = sudo_cmd()
     if value.is_permanent then
         list_extend(args, { "rm", "-rf" })
     else
@@ -133,7 +138,7 @@ local function sudo_remove(value)
     end
     list_extend(args, value.selected)
 
-    sudo_execute(args)
+    execute(args)
 end
 
 return {

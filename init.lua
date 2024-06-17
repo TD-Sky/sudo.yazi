@@ -7,11 +7,16 @@ function string:is_path()
     return self == "." or self == ".." or i and i ~= #self
 end
 
+function escape_spaces(str)
+    return str:gsub(" ", "\\ ")
+end
+
 local get_state = ya.sync(function(_, cmd)
     if cmd == "paste" or cmd == "link" then
         local yanked = {}
         for _, url in pairs(cx.yanked) do
-            table.insert(yanked, tostring(url))
+            local url = escape_spaces(tostring(url))
+            table.insert(yanked, url)
         end
 
         if #yanked == 0 then
@@ -32,10 +37,12 @@ local get_state = ya.sync(function(_, cmd)
 
         if #cx.active.selected ~= 0 then
             for _, url in pairs(cx.active.selected) do
-                table.insert(selected, tostring(url))
+                local url = escape_spaces(tostring(url))
+                table.insert(selected, url)
             end
         else
-            table.insert(selected, tostring(cx.active.current.hovered.url))
+            local url = escape_spaces(tostring(cx.active.current.hovered.url))
+            table.insert(selected, url)
         end
 
         return {
@@ -45,10 +52,11 @@ local get_state = ya.sync(function(_, cmd)
             },
         }
     elseif cmd == "rename" and #cx.active.selected == 0 then
+        local url = escape_spaces(tostring(cx.active.current.hovered.url))
         return {
             kind = cmd,
             value = {
-                hovered = tostring(cx.active.current.hovered.url),
+                hovered = url,
             },
         }
     else

@@ -2,17 +2,23 @@
 
 Call `sudo` in yazi.
 
+## Requirements
+
+- [nushell](https://github.com/nushell/nushell)
+
 ## Functions
 
 - [x] copy files
 - [x] move files
 - [x] rename file
-- [x] trash files (using [conceal](https://github.com/TD-Sky/conceal))
+- [x] trash files
 - [x] remove files
 - [x] create absolute-path symbolic links
-- [ ] create relative-path symbolic links
+- [x] create relative-path symbolic links
 - [x] touch new file
 - [x] make new directory
+
+> You can use [conceal](https://github.com/TD-Sky/conceal) to browse and restore trashed files
 
 ## Usage
 
@@ -21,8 +27,14 @@ Here are my own keymap for reference only:
 ```toml
 # sudo cp/mv
 [[manager.keymap]]
-on = ["R", "p"]
+on = ["R", "p", "p"]
 run = "plugin sudo --args='paste'"
+desc = "sudo paste"
+
+# sudo cp/mv --force
+[[manager.keymap]]
+on = ["R", "P"]
+run = "plugin sudo --args='paste -f'"
 desc = "sudo paste"
 
 # sudo mv
@@ -33,9 +45,15 @@ desc = "sudo rename"
 
 # sudo ln -s (absolute-path)
 [[manager.keymap]]
-on = ["R", "l"]
+on = ["R", "p", "l"]
 run = "plugin sudo --args='link'"
 desc = "sudo link"
+
+# sudo ln -s (relative-path)
+[[manager.keymap]]
+on = ["R", "p", "L"]
+run = "plugin sudo --args='link -r'"
+desc = "sudo link relative path"
 
 # sudo touch/mkdir
 [[manager.keymap]]

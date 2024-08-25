@@ -2,6 +2,15 @@
 
 Call `sudo` in yazi.
 
+## Installation
+
+Until now (2024-08-25) `ya pack` still don't support installing scripts other than lua,
+so you need to run the following command:
+
+```bash
+$ git clone https://github.com/TD-Sky/sudo.yazi.git ~/.config/yazi/plugins/sudo.yazi
+```
+
 ## Requirements
 
 - [nushell](https://github.com/nushell/nushell)

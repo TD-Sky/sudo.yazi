@@ -173,6 +173,9 @@ end
 
 return {
     entry = function(_, args)
+        -- https://github.com/sxyazi/yazi/issues/1553#issuecomment-2309119135
+        ya.manager_emit("escape", { visual = true })
+
         local state = get_state(args[1])
 
         if state.kind == "paste" then

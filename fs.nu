@@ -89,7 +89,11 @@ def legit_name [] -> string {
         if not ($new_name | path exists) {
             return $new_name
         }
-        $new_name = $"($name)_($i)"
+
+        $new_name = match ($name | str split-once) {
+            [$stem, $ext] => $"($stem)_($i).($ext)",
+            null => $"($name)_($i)",
+        }
     }
 }
 
@@ -125,6 +129,32 @@ def relative-to-cwd [] -> string {
     }
 }
 
+def repeat [n: int] -> list {
+    let elt = $in
+
+    0..<$n
+    | reduce --fold [] {|_, list|
+        $list | append $elt
+    }
+}
+
+def 'str split-once' [] -> list {
+    let s = $in
+
+    let i = $s
+    | split chars
+    | position {|c| $c == '.' }
+
+    if $i != null {
+        [
+            ($s | str substring ..<$i),
+            ($s | str substring ($i + 1)..),
+        ]
+    } else {
+        null
+    }
+}
+
 def position [predicate: closure] -> int {
     let iter = $in
 
@@ -132,14 +162,5 @@ def position [predicate: closure] -> int {
         if (do $predicate $e.item) {
             return $e.index
         }
-    }
-}
-
-def repeat [n: int] -> list {
-    let elt = $in
-
-    0..<$n
-    | reduce --fold [] {|_, list|
-        $list | append $elt
     }
 }

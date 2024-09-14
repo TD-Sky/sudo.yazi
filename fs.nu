@@ -1,5 +1,7 @@
 #!/usr/bin/env nu
 
+use std iter
+
 def main [] {}
 
 def 'main cp' [
@@ -56,13 +58,7 @@ def 'main ln' [
         | each {|p| $p | path basename | legit_name }
     }
     | each {|it|
-        let src = if $relative {
-            $it.0 | relative-to-cwd
-        } else {
-            $it.0
-        }
-
-        ln -s -v $src $it.1
+        ln -s ('-r' | flag-if $relative) -v $it.0 $it.1
     }
 }
 
@@ -97,55 +93,14 @@ def legit_name [] -> string {
     }
 }
 
-def relative-to-cwd [] -> string {
-    let path = $in
-
-    let path_cmps = $path | path split
-    let path_len = $path_cmps | length
-    let cwd_cmps = pwd | path split
-
-    let i = $path_cmps
-        | zip $cwd_cmps
-        | position {|it| $it.0 != $it.1 }
-
-    if $i != null {
-        '..'
-        | repeat ($path_len - $i)
-        | path join (
-            $path_cmps
-                | range $i..
-                | path join
-        )
-    } else {
-        let count = ($cwd_cmps | length) - $path_len
-
-        if $count > 0 {
-            '..' | repeat $count | path join
-        } else if $count == 0 {
-            '.'
-        } else {
-            $path_cmps | range $count.. | path join
-        }
-    }
-}
-
-def repeat [n: int] -> list {
-    let elt = $in
-
-    0..<$n
-    | reduce --fold [] {|_, list|
-        $list | append $elt
-    }
-}
-
 def 'str split-once' [] -> list {
     let s = $in
 
     let i = $s
     | split chars
-    | position {|c| $c == '.' }
+    | iter find-index {|c| $c == '.' }
 
-    if $i != null {
+    if $i >= 0 {
         [
             ($s | str substring ..<$i),
             ($s | str substring ($i + 1)..),
@@ -155,12 +110,11 @@ def 'str split-once' [] -> list {
     }
 }
 
-def position [predicate: closure] -> int {
-    let iter = $in
-
-    for e in ($iter | enumerate) {
-        if (do $predicate $e.item) {
-            return $e.index
-        }
+def flag-if [enable: bool] {
+    let flag = $in
+    if $enable {
+        $flag
+    } else {
+        ''
     }
 }

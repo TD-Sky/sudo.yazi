@@ -1,6 +1,6 @@
 #!/usr/bin/env nu
 
-use std iter
+use std/iter
 
 def main [] {}
 

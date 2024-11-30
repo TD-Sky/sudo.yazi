@@ -1,4 +1,4 @@
-local fs = os.getenv("HOME") .. "/.config/yazi/plugins/sudo.yazi/fs.nu"
+local fs = os.getenv("HOME") .. "/.config/yazi/plugins/sudo.yazi/assets/fs.nu"
 
 function string:ends_with_char(suffix)
     return self:sub(-#suffix) == suffix

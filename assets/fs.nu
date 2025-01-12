@@ -78,8 +78,9 @@ def 'main rm' [
 }
 
 # Find a legit file name for renaming
-def legit_name [] -> string {
+def legit_name []: string -> string {
     let name = $in
+
     mut new_name = $name
     for i in 1.. {
         if not ($new_name | path exists) {
@@ -91,9 +92,11 @@ def legit_name [] -> string {
             null => $"($name)_($i)",
         }
     }
+
+    return null
 }
 
-def 'str split-once' [] -> list {
+def 'str split-once' []: string -> list {
     let s = $in
 
     let i = $s
@@ -110,7 +113,7 @@ def 'str split-once' [] -> list {
     }
 }
 
-def flag-if [enable: bool] {
+def flag-if [enable: bool]: any -> any {
     let flag = $in
     if $enable {
         $flag

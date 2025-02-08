@@ -23,7 +23,7 @@ local function list_map(self, f)
 end
 
 local get_state = ya.sync(function(_, cmd)
-    if cmd == "paste" or cmd == "link" then
+    if cmd == "paste" or cmd == "link" or cmd == "hardlink" then
         local yanked = {}
         for _, url in pairs(cx.yanked) do
             table.insert(yanked, tostring(url))
@@ -124,6 +124,15 @@ local function sudo_link(value)
     execute(args)
 end
 
+local function sudo_hardlink(value)
+    local args = sudo_cmd()
+
+    extend_list(args, { "nu", fs, "hardlink" })
+    extend_iter(args, list_map(value.yanked, ya.quote))
+
+    execute(args)
+end
+
 local function sudo_create()
     local name, event = ya.input({
         title = "sudo create:",
@@ -184,6 +193,8 @@ return {
         elseif state.kind == "link" then
             state.value.relative = job.args[2] == "-r"
             sudo_link(state.value)
+        elseif state.kind == "hardlink" then
+            sudo_hardlink(state.value)
         elseif state.kind == "create" then
             sudo_create()
         elseif state.kind == "remove" then

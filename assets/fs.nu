@@ -62,6 +62,17 @@ def 'main ln' [
     }
 }
 
+def 'main hardlink' [...paths: path] {
+    let _ = $paths
+    | zip {
+        $paths
+        | each {|p| $p | path basename | legit_name }
+    }
+    | each {|it|
+        ln -v $it.0 $it.1
+    }
+}
+
 def 'main rm' [
     --permanent,
     ...paths: path,

@@ -98,7 +98,7 @@ end
 local function sudo_paste(value)
     local args = sudo_cmd()
 
-    table.insert(args, fs)
+    extend_list(args, { "nu", fs })
     if value.is_cut then
         table.insert(args, "mv")
     else
@@ -115,7 +115,7 @@ end
 local function sudo_link(value)
     local args = sudo_cmd()
 
-    extend_list(args, { fs, "ln" })
+    extend_list(args, { "nu", fs, "ln" })
     if value.relative then
         table.insert(args, "--relative")
     end
@@ -162,7 +162,7 @@ end
 local function sudo_remove(value)
     local args = sudo_cmd()
 
-    extend_list(args, { fs, "rm" })
+    extend_list(args, { "nu", fs, "rm" })
     if value.is_permanent then
         table.insert(args, "--permanent")
     end

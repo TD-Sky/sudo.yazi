@@ -13,7 +13,7 @@ def 'main cp' [
         $paths
         | each {|p|
             if $force {
-                './'
+                $p | path basename
             } else {
                 $p
                 | path basename
@@ -35,11 +35,9 @@ def 'main mv' [
         $paths
         | each {|p|
             if $force {
-                './'
+                $p | path basename
             } else {
-                $p
-                | path basename
-                | legit_name
+                $p | path basename | legit_name
             }
         }
     }
@@ -58,7 +56,11 @@ def 'main ln' [
         | each {|p| $p | path basename | legit_name }
     }
     | each {|it|
-        ln -s ('-r' | flag-if $relative) -v $it.0 $it.1
+        if $relative {
+            ln -sr -v $it.0 $it.1
+        } else {
+            ln -s -v $it.0 $it.1
+        }
     }
 }
 
@@ -121,14 +123,5 @@ def 'str split-once' []: string -> list {
         ]
     } else {
         null
-    }
-}
-
-def flag-if [enable: bool]: any -> any {
-    let flag = $in
-    if $enable {
-        $flag
-    } else {
-        ''
     }
 }

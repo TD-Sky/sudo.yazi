@@ -88,7 +88,7 @@ local function extend_iter(self, iter)
 end
 
 local function execute(command)
-    ya.manager_emit("shell", {
+    ya.emit("shell", {
         table.concat(command, " "),
         block = true,
         confirm = true,
@@ -183,7 +183,7 @@ end
 return {
     entry = function(_, job)
         -- https://github.com/sxyazi/yazi/issues/1553#issuecomment-2309119135
-        ya.manager_emit("escape", { visual = true })
+        ya.emit("escape", { visual = true })
 
         local state = get_state(job.args[1])
 

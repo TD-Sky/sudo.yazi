@@ -9,6 +9,15 @@ function string:is_path()
     return self == "." or self == ".." or i and i ~= #self
 end
 
+function string:file_name()
+    local file_name = self:match(".*/(.*)")
+    if file_name ~= nil then
+        return file_name
+    else
+        return self
+    end
+end
+
 local function list_map(self, f)
     local i = nil
     return function()
@@ -136,7 +145,7 @@ end
 local function sudo_create()
     local name, event = ya.input({
         title = "sudo create:",
-        position = { "top-center", y = 2, w = 40 },
+        pos = { "top-center", y = 2, w = 40 },
     })
 
     -- Input and confirm
@@ -157,7 +166,8 @@ end
 local function sudo_rename(value)
     local new_name, event = ya.input({
         title = "sudo rename:",
-        position = { "top-center", y = 2, w = 40 },
+        pos = { "top-center", y = 2, w = 40 },
+        value = value.hovered:file_name(),
     })
 
     -- Input and confirm

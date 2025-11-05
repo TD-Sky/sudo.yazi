@@ -75,6 +75,23 @@ local get_state = ya.sync(function(_, cmd)
                 hovered = tostring(cx.active.current.hovered.url),
             },
         }
+    elseif cmd == "chmod" then
+        local selected = {}
+
+        if #cx.active.selected ~= 0 then
+            for _, url in pairs(cx.active.selected) do
+                table.insert(selected, tostring(url))
+            end
+        else
+            table.insert(selected, tostring(cx.active.current.hovered.url))
+        end
+
+        return {
+            kind = cmd,
+            value = {
+                selected = selected,
+            },
+        }
     else
         return {}
     end
@@ -190,6 +207,20 @@ local function sudo_remove(value)
     execute(args)
 end
 
+local function sudo_chmod(value)
+    local mode, event = ya.input({
+        title = "sudo chmod:",
+        pos = { "top-center", y = 2, w = 40 },
+    })
+
+    if event == 1 then
+        local args = sudo_cmd()
+        extend_list(args, { "chmod", mode })
+        extend_iter(args, list_map(value.selected, ya.quote))
+        execute(args)
+    end
+end
+
 return {
     entry = function(_, job)
         -- https://github.com/sxyazi/yazi/issues/1553#issuecomment-2309119135
@@ -212,6 +243,8 @@ return {
             sudo_remove(state.value)
         elseif state.kind == "rename" then
             sudo_rename(state.value)
+        elseif state.kind == "chmod" then
+            sudo_chmod(state.value)
         end
     end,
 }

@@ -24,6 +24,7 @@ $ ya pack -a TD-Sky/sudo
 - [x] create hard links
 - [x] touch new file
 - [x] make new directory
+- [x] change files' mode bits
 
 > You can use [conceal](https://github.com/TD-Sky/conceal) to browse and restore trashed files
 
@@ -85,4 +86,10 @@ desc = "sudo trash"
 on = ["R", "D"]
 run = "plugin sudo -- remove --permanently"
 desc = "sudo delete"
+
+# sudo chmod
+[[mgr.prepend_keymap]]
+on = ["R", "m"]
+run = "plugin sudo -- chmod"
+desc = "sudo chmod"
 ```

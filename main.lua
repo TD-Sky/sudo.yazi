@@ -31,6 +31,38 @@ local function list_map(self, f)
     end
 end
 
+local function common_prefix(paths)
+    if #paths == 0 then
+        return ""
+    end
+    if #paths == 1 then
+        local last_slash = paths[1]:match(".*()/")
+        if last_slash then
+            return paths[1]:sub(1, last_slash - 1)
+        end
+        return paths[1]
+    end
+
+    local prefix = paths[1]
+    for i = 2, #paths do
+        local path = paths[i]
+        local j = 1
+        while j <= #prefix and j <= #path and prefix:sub(j, j) == path:sub(j, j) do
+            j = j + 1
+        end
+        prefix = prefix:sub(1, j - 1)
+        if prefix == "" then
+            return ""
+        end
+    end
+
+    local last_slash = prefix:match(".*()/")
+    if last_slash then
+        return prefix:sub(1, last_slash - 1)
+    end
+    return ""
+end
+
 local get_state = ya.sync(function(_, cmd)
     if cmd == "paste" or cmd == "link" or cmd == "hardlink" then
         local yanked = {}
@@ -68,13 +100,49 @@ local get_state = ya.sync(function(_, cmd)
                 selected = selected,
             },
         }
-    elseif cmd == "rename" and #cx.active.selected == 0 then
-        return {
-            kind = cmd,
-            value = {
-                hovered = tostring(cx.active.current.hovered.url),
-            },
-        }
+    elseif cmd == "rename" then
+        if #cx.active.selected <= 1 then
+            local hovered
+            if #cx.active.selected == 1 then
+                for _, url in pairs(cx.active.selected) do
+                    hovered = tostring(url)
+                    break
+                end
+            else
+                hovered = tostring(cx.active.current.hovered.url)
+            end
+            return {
+                kind = cmd,
+                value = {
+                    hovered = hovered,
+                },
+            }
+        else
+            local selected = {}
+            for _, url in pairs(cx.active.selected) do
+                table.insert(selected, tostring(url))
+            end
+
+            local editor_cmd = nil
+            local oe = rt and rt.opener and rt.opener.edit
+            if oe then
+                for _, rule in ipairs(oe) do
+                    if rule.block then
+                        editor_cmd = rule.run
+                        break
+                    end
+                end
+            end
+            editor_cmd = editor_cmd or "${EDITOR:-vim} %s"
+
+            return {
+                kind = "bulk_rename",
+                value = {
+                    selected = selected,
+                    editor_cmd = editor_cmd,
+                },
+            }
+        end
     elseif cmd == "chmod" then
         local selected = {}
 
@@ -195,6 +263,40 @@ local function sudo_rename(value)
     end
 end
 
+local function sudo_bulk_rename(value)
+    local selected = value.selected
+    local root = common_prefix(selected)
+    local editor_cmd = value.editor_cmd
+
+    local old_names = {}
+    for _, path in ipairs(selected) do
+        local rel = root ~= "" and path:sub(#root + 2) or path
+        table.insert(old_names, rel)
+    end
+
+    local script = {}
+    table.insert(script, "TMP=$(mktemp)")
+    table.insert(script, 'trap "rm -f $TMP" EXIT')
+    table.insert(script, "cat > \"$TMP\" << 'EOF_SUDO_YAZI'")
+    for _, name in ipairs(old_names) do
+        table.insert(script, name)
+    end
+    table.insert(script, "EOF_SUDO_YAZI")
+    local editor_line = editor_cmd:gsub("%%s", '"$TMP"')
+    table.insert(script, editor_line)
+
+    local nu_cmd = sudo_cmd()
+    extend_list(nu_cmd, { "nu", fs, "bulk-rename", "--root", root, "--tmp", "$TMP" })
+    extend_iter(nu_cmd, list_map(selected, ya.quote))
+    table.insert(script, table.concat(nu_cmd, " "))
+
+    ya.emit("shell", {
+        table.concat(script, "\n"),
+        block = true,
+        confirm = true,
+    })
+end
+
 local function sudo_remove(value)
     local args = sudo_cmd()
 
@@ -243,6 +345,8 @@ return {
             sudo_remove(state.value)
         elseif state.kind == "rename" then
             sudo_rename(state.value)
+        elseif state.kind == "bulk_rename" then
+            sudo_bulk_rename(state.value)
         elseif state.kind == "chmod" then
             sudo_chmod(state.value)
         end

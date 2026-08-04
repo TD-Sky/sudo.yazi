@@ -90,6 +90,59 @@ def 'main rm' [
     }
 }
 
+
+def 'str split-once' []: string -> list {
+    let s = $in
+
+    let i = $s
+    | split chars
+    | iter find-index {|c| $c == '.' }
+
+    if $i >= 0 {
+        [
+            ($s | str substring ..<$i),
+            ($s | str substring ($i + 1)..),
+        ]
+    } else {
+        null
+    }
+}
+
+# Read a temp file with edited names and rename corresponding paths.
+# Called via: sudo -k -- nu fs.nu bulk-rename --root <root> --tmp <tmp> <paths...>
+def 'main bulk-rename' [
+    --root: string,       # common root directory
+    --tmp: string,        # temp file with one new name per line
+    ...paths: path,       # original full paths
+] {
+    let old_names = if $root == "" {
+        $paths
+    } else {
+        let prefix = $"($root)/"
+        $paths | each {|p| $p | str replace $prefix '' }
+    }
+
+    let new_names = (open $tmp | lines)
+    rm --force $tmp
+
+    let count = ($paths | length)
+    for i in 0..($count - 1) {
+        if $i >= ($new_names | length) {
+            break
+        }
+        let old_rel = $old_names | get $i
+        let new_rel = $new_names | get $i
+        if ($new_rel != null) and ($new_rel != "") and ($new_rel != $old_rel) {
+            let new_path = if $root == "" {
+                $new_rel
+            } else {
+                $"($root)/($new_rel)"
+            }
+            mv -v ($paths | get $i) $new_path
+        }
+    }
+}
+
 # Find a legit file name for renaming
 def legit_name []: string -> string {
     let name = $in
@@ -107,21 +160,4 @@ def legit_name []: string -> string {
     }
 
     return null
-}
-
-def 'str split-once' []: string -> list {
-    let s = $in
-
-    let i = $s
-    | split chars
-    | iter find-index {|c| $c == '.' }
-
-    if $i >= 0 {
-        [
-            ($s | str substring ..<$i),
-            ($s | str substring ($i + 1)..),
-        ]
-    } else {
-        null
-    }
 }

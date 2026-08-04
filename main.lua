@@ -122,24 +122,10 @@ local get_state = ya.sync(function(_, cmd)
             for _, url in pairs(cx.active.selected) do
                 table.insert(selected, tostring(url))
             end
-
-            local editor_cmd = nil
-            local oe = rt and rt.opener and rt.opener.edit
-            if oe then
-                for _, rule in ipairs(oe) do
-                    if rule.block then
-                        editor_cmd = rule.run
-                        break
-                    end
-                end
-            end
-            editor_cmd = editor_cmd or "${EDITOR:-vim} %s"
-
             return {
                 kind = "bulk_rename",
                 value = {
                     selected = selected,
-                    editor_cmd = editor_cmd,
                 },
             }
         end
@@ -266,7 +252,18 @@ end
 local function sudo_bulk_rename(value)
     local selected = value.selected
     local root = common_prefix(selected)
-    local editor_cmd = value.editor_cmd
+
+    local editor_cmd = nil
+    local oe = rt and rt.opener and rt.opener.edit
+    if oe then
+        for _, rule in pairs(oe:match()) do
+            if rule.block then
+                editor_cmd = rule.run
+                break
+            end
+        end
+    end
+    editor_cmd = editor_cmd or "${EDITOR:-vim} %s"
 
     local old_names = {}
     for _, path in ipairs(selected) do

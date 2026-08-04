@@ -63,33 +63,6 @@ local function common_prefix(paths)
     return ""
 end
 
-local function read_opener_editor()
-    local config_home = os.getenv("YAZI_CONFIG_HOME")
-        or (os.getenv("XDG_CONFIG_HOME") or os.getenv("HOME") .. "/.config") .. "/yazi"
-    local f = io.open(config_home .. "/yazi.toml", "r")
-    if not f then
-        return "${EDITOR:-vim} %s"
-    end
-    local content = f:read("*a")
-    f:close()
-
-    local opener_start = content:find("%[opener%]")
-    if not opener_start then
-        return "${EDITOR:-vim} %s"
-    end
-
-    local next_section = content:find("\n%[%w+%]", opener_start)
-    local section = next_section and content:sub(opener_start, next_section - 1) or content:sub(opener_start)
-
-    local edit_pos = section:find("edit%s*=%s*%[")
-    if not edit_pos then
-        return "${EDITOR:-vim} %s"
-    end
-
-    return section:match("run%s*=%s*\"([^\"]*)\"", edit_pos)
-        or "${EDITOR:-vim} %s"
-end
-
 local get_state = ya.sync(function(_, cmd)
     if cmd == "paste" or cmd == "link" or cmd == "hardlink" then
         local yanked = {}
@@ -150,7 +123,17 @@ local get_state = ya.sync(function(_, cmd)
                 table.insert(selected, tostring(url))
             end
 
-            local editor_cmd = read_opener_editor()
+            local editor_cmd = nil
+            local oe = rt and rt.opener and rt.opener.edit
+            if oe then
+                for _, rule in ipairs(oe) do
+                    if rule.block then
+                        editor_cmd = rule.run
+                        break
+                    end
+                end
+            end
+            editor_cmd = editor_cmd or "${EDITOR:-vim} %s"
 
             return {
                 kind = "bulk_rename",

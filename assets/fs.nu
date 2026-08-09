@@ -108,14 +108,14 @@ def 'str split-once' []: string -> list {
     }
 }
 
-# Create a temp file with old names, open editor, then sudo-mv.
-# Called via: SUDO_YAZI_EDITOR_CMD='...' nu fs.nu bulk-rename --root <root> <paths...>
-def 'main bulk-rename' [
+# Write old names to result file and open editor on it.
+# Called via: nu fs.nu bulk-rename-edit --root <root> --editor-cmd <cmd> --result-file <file> <paths...>
+def 'main bulk-rename-edit' [
     --root: string,          # common root directory
     --editor-cmd: string,    # editor command with %s placeholder
+    --result-file: string,   # file to write old names into and edit
     ...paths: path,          # original full paths
 ] {
-    let editor_cmd = $editor_cmd
     let old_names = if $root == "" {
         $paths
     } else {
@@ -123,20 +123,30 @@ def 'main bulk-rename' [
         $paths | each {|p| $p | str replace $prefix '' }
     }
 
-    let tmp = (mktemp -t sudo-yazi-XXXXXX)
+    $old_names | str join (char newline) | save -f $result_file
 
-    $old_names | str join (char newline) | save -f $tmp
-
-    let words = ($editor_cmd | str replace '%s' $tmp | split row ' ')
+    let words = ($editor_cmd | str replace '%s' $result_file | split row ' ')
     if ($words | length) > 0 {
         run-external ...$words
     }
+}
 
-    let new_names = (open $tmp | lines)
-    rm --force $tmp
+# Read edited names from result file and sudo-mv old paths to new paths.
+# Called via: sudo -k -- nu fs.nu bulk-rename-do --root <root> --result-file <file> <paths...>
+def 'main bulk-rename-do' [
+    --root: string,        # common root directory
+    --result-file: string, # file with edited names (one per line)
+    ...paths: path,        # original full paths
+] {
+    let new_names = (open $result_file | lines)
+    rm --force $result_file
 
-    ^sudo -k
-    ^sudo -v
+    let old_names = if $root == "" {
+        $paths
+    } else {
+        let prefix = $"($root)/"
+        $paths | each {|p| $p | str replace $prefix '' }
+    }
 
     let count = ($paths | length)
     for i in 0..($count - 1) {
@@ -151,11 +161,9 @@ def 'main bulk-rename' [
             } else {
                 $"($root)/($new_rel)"
             }
-            ^sudo mv -v ($paths | get $i) $new_path
+            mv -v ($paths | get $i) $new_path
         }
     }
-
-    ^sudo -k
 }
 
 # Find a legit file name for renaming

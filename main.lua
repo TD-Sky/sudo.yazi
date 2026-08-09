@@ -267,9 +267,24 @@ local function sudo_bulk_rename(value)
 
     local editor_escaped = editor_cmd:gsub("%%s", "%%%%s")
 
-    local args = { "nu", fs, "bulk-rename", "--root", root, "--editor-cmd", ya.quote(editor_escaped) }
-    extend_iter(args, list_map(selected, ya.quote))
-    execute(args)
+    local edit_args = { "nu", fs, "bulk-rename-edit", "--root", root, "--editor-cmd", ya.quote(editor_escaped), "--result-file", "$RESULT_TMP" }
+    extend_iter(edit_args, list_map(selected, ya.quote))
+
+    local do_args = sudo_cmd()
+    extend_list(do_args, { "nu", fs, "bulk-rename-do", "--root", root, "--result-file", "$RESULT_TMP" })
+    extend_iter(do_args, list_map(selected, ya.quote))
+
+    local script = "RESULT_TMP=$(mktemp)\n"
+        .. table.concat(edit_args, " ") .. "\n"
+        .. "if [ -s \"$RESULT_TMP\" ]; then\n"
+        .. "    " .. table.concat(do_args, " ") .. "\n"
+        .. "fi\n"
+
+    ya.emit("shell", {
+        script,
+        block = true,
+        confirm = true,
+    })
 end
 
 local function sudo_remove(value)

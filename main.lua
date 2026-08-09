@@ -265,33 +265,11 @@ local function sudo_bulk_rename(value)
     end
     editor_cmd = editor_cmd or "${EDITOR:-vim} %s"
 
-    local old_names = {}
-    for _, path in ipairs(selected) do
-        local rel = root ~= "" and path:sub(#root + 2) or path
-        table.insert(old_names, rel)
-    end
+    local editor_escaped = editor_cmd:gsub("%%s", "%%%%s")
 
-    local script = {}
-    table.insert(script, "TMP=$(mktemp)")
-    table.insert(script, 'trap "rm -f $TMP" EXIT')
-    table.insert(script, "cat > \"$TMP\" << 'EOF_SUDO_YAZI'")
-    for _, name in ipairs(old_names) do
-        table.insert(script, name)
-    end
-    table.insert(script, "EOF_SUDO_YAZI")
-    local editor_line = editor_cmd:gsub("%%s", '"$TMP"')
-    table.insert(script, editor_line)
-
-    local nu_cmd = sudo_cmd()
-    extend_list(nu_cmd, { "nu", fs, "bulk-rename", "--root", root, "--tmp", "$TMP" })
-    extend_iter(nu_cmd, list_map(selected, ya.quote))
-    table.insert(script, table.concat(nu_cmd, " "))
-
-    ya.emit("shell", {
-        table.concat(script, "\n"),
-        block = true,
-        confirm = true,
-    })
+    local args = { "nu", fs, "bulk-rename", "--root", root, "--editor-cmd", ya.quote(editor_escaped) }
+    extend_iter(args, list_map(selected, ya.quote))
+    execute(args)
 end
 
 local function sudo_remove(value)

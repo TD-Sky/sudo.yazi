@@ -17,6 +17,7 @@ $ ya pkg add TD-Sky/sudo
 - [x] copy files
 - [x] move files
 - [x] rename file
+- [x] bulk rename files
 - [x] trash files
 - [x] remove files
 - [x] create absolute-path symbolic links
@@ -49,7 +50,7 @@ desc = "sudo paste"
 [[mgr.prepend_keymap]]
 on = ["R", "r"]
 run = "plugin sudo -- rename"
-desc = "sudo rename"
+desc = "sudo rename/bulk-rename"
 
 # sudo ln -s (absolute-path)
 [[mgr.prepend_keymap]]

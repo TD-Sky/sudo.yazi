@@ -90,6 +90,69 @@ def 'main rm' [
     }
 }
 
+# Write old names to a mapping file and print its path.
+# The caller starts the interactive editor with inherited terminal streams.
+def 'main bulk-rename-prepare' [
+    --root: string,     # common root directory
+    ...paths: path,     # original full paths
+]: nothing -> string {
+    let old_names = match $root {
+        "" | null => { $paths }
+        _ => {
+            $paths
+            | each {|p|
+                $p
+                | str replace $root ''
+                | str trim --left --char '/'
+            }
+        }
+    }
+
+    let buf = mktemp --tmpdir --suffix '.txt' sudo-yazi-bulk-rename.XXXXXX
+    $old_names | str join (char newline) | save -f $buf
+
+    return $buf
+}
+
+# Read edited names from mapping file and sudo-mv old paths to new paths.
+def 'main bulk-rename-do' [
+    --root: string,     # common root directory
+    --mapping: string,  # mapping file contains edited names (one per line)
+    ...paths: path,     # original full paths
+] {
+    let new_names = open $mapping | lines
+    rm --force $mapping
+
+    let old_names = match $root {
+        "" | null => { $paths }
+        _ => {
+            $paths
+            | each {|p|
+                $p
+                | str replace $root ''
+                | str trim --left --char '/'
+            }
+        }
+    }
+
+    let count = $paths | length
+    for i in 0..($count - 1) {
+        if $i >= ($new_names | length) {
+            break
+        }
+
+        let old_rel = $old_names | get $i
+        let new_rel = $new_names | get $i
+        if ($new_rel != null) and ($new_rel != "") and ($new_rel != $old_rel) {
+            let new_path = match $root {
+                "" | null => { $new_rel }
+                _ => { [$root, $new_rel] | path join }
+            }
+            mv -v ($paths | get $i) $new_path
+        }
+    }
+}
+
 # Find a legit file name for renaming
 def legit_name []: string -> string {
     let name = $in

@@ -93,8 +93,8 @@ local get_state = ya.sync(function(_, cmd)
         local selected = {}
 
         if #cx.active.selected ~= 0 then
-            for _, url in pairs(cx.active.selected) do
-                table.insert(selected, tostring(url))
+            for _, file in pairs(cx.active.selected) do
+                table.insert(selected, tostring(file.url))
             end
         else
             table.insert(selected, tostring(cx.active.current.hovered.url))
@@ -110,8 +110,8 @@ local get_state = ya.sync(function(_, cmd)
         if #cx.active.selected <= 1 then
             local hovered
             if #cx.active.selected == 1 then
-                for _, url in pairs(cx.active.selected) do
-                    hovered = tostring(url)
+                for _, file in pairs(cx.active.selected) do
+                    hovered = tostring(file.url)
                     break
                 end
             else
@@ -125,8 +125,8 @@ local get_state = ya.sync(function(_, cmd)
             }
         else
             local selected = {}
-            for _, url in pairs(cx.active.selected) do
-                table.insert(selected, tostring(url))
+            for _, file in pairs(cx.active.selected) do
+                table.insert(selected, tostring(file.url))
             end
             return {
                 kind = "bulk_rename",
@@ -139,8 +139,8 @@ local get_state = ya.sync(function(_, cmd)
         local selected = {}
 
         if #cx.active.selected ~= 0 then
-            for _, url in pairs(cx.active.selected) do
-                table.insert(selected, tostring(url))
+            for _, file in pairs(cx.active.selected) do
+                table.insert(selected, tostring(file.url))
             end
         else
             table.insert(selected, tostring(cx.active.current.hovered.url))

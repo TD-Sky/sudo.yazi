@@ -72,8 +72,8 @@ end
 local get_state = ya.sync(function(_, cmd)
     if cmd == "paste" or cmd == "link" or cmd == "hardlink" then
         local yanked = {}
-        for _, url in pairs(cx.yanked) do
-            table.insert(yanked, tostring(url))
+        for _, file in pairs(cx.yanked) do
+            table.insert(yanked, tostring(file.url))
         end
 
         if #yanked == 0 then
